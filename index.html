@@ -4,8 +4,11 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="theme-color" content="#00f2ff">
+    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="Smart Alarm">
+    
     <title>Smart Voice Alarm 2026</title>
     
     <link rel="stylesheet" href="style.css">
@@ -19,7 +22,7 @@
     <div class="app-container">
         <header class="top-bar">
             <span>NEON SYSTEM • V2.7</span>
-            <button id="help-btn" class="help-btn">?</button>
+            <button id="help-btn" class="help-btn" aria-label="Ayuda">?</button>
         </header>
 
         <main class="clock-display-center">
@@ -68,15 +71,15 @@
     </div>
 
     <audio id="alarm-audio" preload="auto" loop></audio>
-    
     <script src="script.js"></script>
+    
     <script>
-        // Registro del Service Worker para permitir instalación
+        // Registro del Service Worker para habilitar la instalación (PWA)
         if ('serviceWorker' in navigator) {
             window.addEventListener('load', () => {
                 navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('Nucleo de Smart Voice Alarm activo.'))
-                    .catch(err => console.error('Error de sincronización:', err));
+                    .then(reg => console.log('Núcleo Smart Voice Alarm: Operativo'))
+                    .catch(err => console.error('Fallo en sincronización de núcleo:', err));
             });
         }
     </script>
