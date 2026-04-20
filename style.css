@@ -13,6 +13,7 @@ body, html {
     color: #fff;
     font-family: 'Inter', sans-serif;
     overflow: hidden;
+    user-select: none; /* Evita selecciones accidentales en la app */
 }
 
 .app-container {
@@ -38,7 +39,10 @@ body, html {
     background: none; border: 1px solid var(--neon-dim);
     color: var(--neon); border-radius: 50%;
     width: 30px; height: 30px; cursor: pointer;
+    transition: 0.3s;
 }
+
+.help-btn:active { transform: scale(0.9); background: var(--neon-dim); }
 
 .clock-display-center {
     flex: 1;
@@ -65,11 +69,13 @@ body, html {
     letter-spacing: 3px;
     margin-top: 20px;
     height: 20px;
+    transition: opacity 0.3s;
 }
 
+/* Lista de Alarmas con Scroll invisible */
 .alarms-container {
     height: 140px;
-    overflow-y: scroll;
+    overflow-y: auto;
     margin: 15px 0;
     scrollbar-width: none;
     -ms-overflow-style: none;
@@ -88,11 +94,14 @@ body, html {
     justify-content: space-between;
     align-items: center;
     border: 1px solid rgba(0, 242, 255, 0.05);
+    animation: slideIn 0.3s ease-out;
 }
+
+@keyframes slideIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
 .alarm-info strong { font-size: 1.3rem; font-family: 'Orbitron'; color: var(--neon); }
 .alarm-info small { color: #777; font-size: 0.6rem; text-transform: uppercase; margin-left: 10px; }
-.btn-delete { background: none; border: none; color: var(--danger); font-size: 1.1rem; cursor: pointer; }
+.btn-delete { background: none; border: none; color: var(--danger); font-size: 1.1rem; cursor: pointer; padding: 10px; }
 
 .bottom-controls {
     height: 160px;
@@ -109,6 +118,7 @@ body, html {
     font-family: 'Orbitron'; 
     margin-bottom: 8px;
     display: block;
+    text-align: center;
 }
 
 #tone-select {
@@ -121,15 +131,9 @@ body, html {
     outline: none;
     cursor: pointer;
     text-align: center;
-    appearance: none;
-    -webkit-appearance: none;
 }
 
-#tone-select option {
-    background: #0a0a0a;
-    color: #fff;
-}
-
+/* Micrófono y Animaciones */
 .mic-wrapper { position: relative; width: 65px; height: 65px; }
 .btn-mic {
     width: 100%; height: 100%;
@@ -137,17 +141,24 @@ body, html {
     background: #111; color: var(--neon);
     font-size: 1.5rem; cursor: pointer;
     position: relative; z-index: 5;
+    transition: 0.3s;
 }
+
+/* Estado cuando está escuchando */
 .listening .btn-mic { background: var(--neon); color: #000; box-shadow: 0 0 20px var(--neon); }
-.listening .mic-ring {
-    position: absolute; top: -5px; left: -5px; right: -5px; bottom: -5px;
+.mic-ring {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
     border: 2px solid var(--neon); border-radius: 50%;
-    animation: pulse 1.5s infinite;
+    opacity: 0;
+    pointer-events: none;
 }
+.listening .mic-ring { animation: pulse 1.5s infinite; opacity: 1; }
 
-@keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.5); opacity: 0; } }
+@keyframes pulse { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
 
-.modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); }
-.modal-content { background: #0a0a0a; border: 1px solid var(--neon-dim); margin: 30% auto; padding: 30px; width: 80%; border-radius: 20px; text-align: center; }
-.help-list p { font-size: 0.8rem; margin: 10px 0; color: #ccc; }
-.stop-hint { color: var(--neon); font-size: 0.7rem; margin-top: 20px; letter-spacing: 1px; }
+/* Modales */
+.modal { display: none; position: fixed; z-index: 100; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); backdrop-filter: blur(8px); }
+.modal-content { background: #0a0a0a; border: 1px solid var(--neon-dim); margin: 25% auto; padding: 30px; width: 80%; border-radius: 20px; text-align: center; position: relative; }
+.close-modal { position: absolute; top: 10px; right: 20px; font-size: 2rem; color: var(--neon-dim); cursor: pointer; }
+.help-list p { font-size: 0.85rem; margin: 15px 0; color: #ccc; border-bottom: 1px solid #111; padding-bottom: 5px; }
+.stop-hint { color: var(--neon); font-size: 0.7rem; margin-top: 20px; letter-spacing: 1px; font-weight: bold; }
