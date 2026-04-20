@@ -4,7 +4,8 @@ const assets = [
   './index.html',
   './style.css',
   './script.js',
-  './manifest/site.webmanifest',
+  './manifest.json',
+  './icon-192.png',
   './assets/alarma1.mp3',
   './assets/alarma2.mp3',
   './assets/alarma3.mp3',
@@ -12,34 +13,14 @@ const assets = [
   './icons/favicon-512x512.png'
 ];
 
-// Instalación: Guardar archivos críticos en el dispositivo
 self.addEventListener('install', e => {
-  e.waitUntil(
-    caches.open(CACHE).then(c => {
-      console.log('Smart Voice Alarm: Archivos del sistema almacenados.');
-      return c.addAll(assets);
-    })
-  );
+  e.waitUntil(caches.open(CACHE).then(c => c.addAll(assets)));
 });
 
-// Estrategia de carga: Primero caché, luego red
 self.addEventListener('fetch', e => {
-  e.respondWith(
-    caches.match(e.request).then(r => {
-      return r || fetch(e.request);
-    })
-  );
+  e.respondWith(caches.match(e.request).then(r => r || fetch(e.request)));
 });
 
-// Limpieza de versiones antiguas
 self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys().then(keys => {
-      return Promise.all(
-        keys.map(key => {
-          if (key !== CACHE) return caches.delete(key);
-        })
-      );
-    })
-  );
+  e.waitUntil(caches.keys().then(keys => Promise.all(keys.map(k => k !== CACHE && caches.delete(k)))));
 });
