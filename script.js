@@ -25,38 +25,64 @@ setInterval(() => {
     });
 }, 1000);
 
-// RECONOCIMIENTO DE VOZ
+// RECONOCIMIENTO DE VOZ - MOTOR 2026
 const Speech = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition;
+
 if (Speech) {
-    const recognition = new Speech();
+    recognition = new Speech();
     recognition.lang = 'es-ES';
     recognition.continuous = true;
     recognition.interimResults = true;
-
-    function startListening() {
-        try { recognition.start(); micWrapper.classList.add('listening'); } catch(e){}
-    }
-    function stopListening() {
-        if (!isAlarming) {
-            recognition.stop(); 
-            micWrapper.classList.remove('listening');
-            commandDisplay.textContent = "ESPERANDO VOZ";
-        }
-    }
 
     recognition.onresult = (e) => {
         const result = e.results[e.results.length - 1];
         const text = result[0].transcript.toLowerCase();
 
-        if (isAlarming && (text.includes("detener") || text.includes("parar") || text.includes("ya"))) {
-            stopAlarm(); return;
+        if (isAlarming && (text.includes("detener") || text.includes("parar") || text.includes("ya") || text.includes("apágate"))) {
+            stopAlarm(); 
+            return;
         }
-        if (result.isFinal && !isAlarming) processCommand(text);
-        else commandDisplay.textContent = text;
+
+        if (result.isFinal) {
+            if (!isAlarming) processCommand(text);
+        } else {
+            commandDisplay.textContent = text;
+        }
     };
 
-    recognition.onend = () => { if (isAlarming || micWrapper.classList.contains('listening')) try { recognition.start(); } catch(e){} };
-    micBtn.onclick = () => micWrapper.classList.contains('listening') ? stopListening() : startListening();
+    recognition.onend = () => {
+        // Reinicio automático si el usuario quería seguir escuchando o si la alarma suena
+        if (micWrapper.classList.contains('listening') || isAlarming) {
+            try { recognition.start(); } catch(e) {}
+        }
+    };
+
+    recognition.onerror = (e) => console.warn("Reconocimiento en espera...");
+
+    micBtn.onclick = () => {
+        if (micWrapper.classList.contains('listening')) {
+            stopListening();
+        } else {
+            startListening();
+        }
+    };
+}
+
+function startListening() {
+    try { 
+        recognition.start(); 
+        micWrapper.classList.add('listening'); 
+        commandDisplay.textContent = "ESCUCHANDO...";
+    } catch(e) { console.log("Reintento de micro..."); }
+}
+
+function stopListening() {
+    if (!isAlarming) {
+        recognition.stop(); 
+        micWrapper.classList.remove('listening');
+        commandDisplay.textContent = "SISTEMA LISTO";
+    }
 }
 
 function processCommand(text) {
@@ -89,7 +115,6 @@ function processCommand(text) {
     if (timeMatch) {
         let h = parseInt(timeMatch[1]), m = parseInt(timeMatch[2]) || 0;
         
-        // Lógica AM/PM
         if ((text.includes("tarde") || text.includes("noche") || text.includes("pm")) && h < 12) h += 12;
         if ((text.includes("mañana") || text.includes("am")) && h === 12) h = 0;
 
@@ -101,29 +126,46 @@ function processCommand(text) {
             isDaily, dateLabel: isDaily ? "DIARIO" : label, cooldown: false 
         });
         save();
-        window.speechSynthesis.speak(new SpeechSynthesisUtterance(`Alarma configurada`));
+        speak(`Alarma configurada a las ${h} con ${m}`);
         stopListening();
     }
 }
 
 function triggerAlarm(a) {
-    isAlarming = true; activeAlarmId = a.id; a.cooldown = true;
+    isAlarming = true; 
+    activeAlarmId = a.id; 
+    a.cooldown = true;
     alarmAudio.src = toneSelect.value;
-    alarmAudio.play().catch(() => {});
+    alarmAudio.play().catch(() => {
+        console.log("Esperando interacción para sonar...");
+    });
+    
+    // Forzar escucha para el comando "detener"
     startListening();
     commandDisplay.textContent = "¡ALERTA! DI 'DETENER'";
 }
 
 function stopAlarm() {
-    alarmAudio.pause(); alarmAudio.currentTime = 0;
+    alarmAudio.pause(); 
+    alarmAudio.currentTime = 0;
     isAlarming = false;
+    
+    // Si no es diaria, se borra tras sonar
     alarms = alarms.filter(a => a.id !== activeAlarmId || a.isDaily);
     save();
-    window.speechSynthesis.speak(new SpeechSynthesisUtterance("Hecho"));
+    
+    speak("Alarma detenida");
     setTimeout(() => stopListening(), 1000);
 }
 
+function speak(msg) {
+    const ut = new SpeechSynthesisUtterance(msg);
+    ut.lang = 'es-ES';
+    window.speechSynthesis.speak(ut);
+}
+
 const save = () => { localStorage.setItem('smartAlarms', JSON.stringify(alarms)); render(); };
+
 const render = () => {
     alarmsListUI.innerHTML = alarms.map(a => `
         <li class="alarm-item">
@@ -132,9 +174,22 @@ const render = () => {
         </li>`).join('');
 };
 
-window.deleteAlarm = (id) => { alarms = alarms.filter(a => a.id !== id); save(); };
+window.deleteAlarm = (id) => { 
+    alarms = alarms.filter(a => a.id !== id); 
+    save(); 
+};
+
+// Eventos de interfaz
 btnHelp.onclick = () => modal.style.display = "block";
 spanClose.onclick = () => modal.style.display = "none";
 window.onclick = (e) => { if (e.target == modal) modal.style.display = "none"; };
-document.body.onclick = () => { if(alarmAudio.paused) alarmAudio.load(); };
+
+// Desbloqueo de audio por interacción del usuario (Requisito Navegadores)
+document.body.addEventListener('click', () => {
+    if(alarmAudio.paused) {
+        alarmAudio.load();
+        console.log("Motor de audio listo.");
+    }
+}, { once: true });
+
 window.addEventListener('load', render);
